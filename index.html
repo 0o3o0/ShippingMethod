@@ -27,10 +27,21 @@
       font-size: 1.1rem;
       margin-bottom: 10px;
     }
+    #cargo-inputs {
+      display: none;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    #cargo-inputs input {
+      margin: 0 5px;
+      padding: 5px;
+      font-size: 1rem;
+      width: 120px;
+    }
     #grid-container {
       position: relative;
       width: 100vw;
-      height: calc(100vh - 140px);
+      height: calc(100vh - 200px);
       margin: 0;
       padding: 0;
     }
@@ -44,9 +55,9 @@
     }
     #truck-rect {
       position: absolute;
-      top: 10px;
+      top: 50%;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
       background: rgba(0, 0, 255, 0.3);
       pointer-events: none;
     }
@@ -61,6 +72,10 @@
     <option value="310-85-701">310-85-701</option>
   </select>
   <div id="truck-label"></div>
+  <div id="cargo-inputs">
+    <input type="number" id="cargo-count" min="1" placeholder="מספר הפריטים" />
+    <input type="text" id="cargo-size" placeholder="גודל הפריט (למשל 1x1x1)" />
+  </div>
   <div id="grid-container">
     <div id="grid"></div>
     <div id="truck-rect"></div>
@@ -70,13 +85,14 @@
     const truckSelect = document.getElementById('truck-select');
     const truckRect = document.getElementById('truck-rect');
     const truckLabel = document.getElementById('truck-label');
+    const cargoInputs = document.getElementById('cargo-inputs');
     // מידות במטרים
     const truckSizes = {
       '821-69-803': { width: 8.8, height: 2.2 },
       '893-15-702': { width: 8.0, height: 2.2 },
       '310-85-701': { width: 13.0, height: 2.3 }
     };
-    const scale = 50; // פיקסלים למטר
+    const scale = 60; // פיקסלים למטר, מוגדל ליעילות
 
     truckSelect.addEventListener('change', () => {
       const plate = truckSelect.value;
@@ -88,10 +104,12 @@
         truckRect.style.width = widthPx + 'px';
         truckRect.style.height = heightPx + 'px';
         truckLabel.textContent = `גודל המשאית: ${size.width} מ׳ x ${size.height} מ׳`;
+        cargoInputs.style.display = 'block';
       } else {
         truckRect.style.width = '';
         truckRect.style.height = '';
         truckLabel.textContent = '';
+        cargoInputs.style.display = 'none';
       }
     });
   </script>

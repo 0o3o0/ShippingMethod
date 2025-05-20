@@ -15,7 +15,7 @@
     #grid { width: 100%; height: 100%; background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px); background-size: 20px 20px; }
     #truck-rect { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 255, 0.3); pointer-events: none; overflow: hidden; }
     .cargo-item { position: absolute; box-sizing: border-box; }
-    .cargo-count-label { position: absolute; font-size: 1.2rem; font-weight: bold; color: #000; pointer-events: none; }
+    .cargo-count-label { position: absolute; font-size: 1rem; font-weight: bold; color: #000; pointer-events: none; }
   </style>
 </head>
 <body>
@@ -72,35 +72,57 @@
     let shipmentsData = {};
 
     function renderAllCargo() {
+      // מנקה
       truckRect.querySelectorAll('.cargo-item, .cargo-count-label').forEach(el => el.remove());
-      // מיין לפי סדר פריקה (עומס): גבוה -> נמוך
-      const sorted = Object.entries(shipmentsData)
-        .sort(([,a], [,b]) => b.priority - a.priority)
-        .sort(([,a], [,b]) => (b.cw*b.cl) - (a.cw*a.cl)); // בין מטענים, גדולים קודם
-      sorted.forEach(([ship, data], idx) => {
-        const { count, cw, cl, priority } = data;
+      // שמירת נתונים למידול
+      // מיון משלוחים לפי סדר פריקה (פריקה ראשונה אחרונה בטעינה), סדר יורד עבור פריקה
+      const sortedShips = Object.entries(shipmentsData)
+        .sort(([,a], [,b]) => a.priority - b.priority);
+
+      let xOffset = 0, yOffset = 0, maxRowHeight = 0;
+
+      sortedShips.forEach(([ship, data], idx) => {
+        const { count, cw, cl } = data;
         const cwPx = cw * scale;
         const clPx = cl * scale;
-        const itemsPerRow = Math.max(1, Math.floor(truckRect.clientWidth / cwPx));
+        // מספר פריטים למקום
+        const perRow = Math.max(1, Math.floor(truckRect.clientWidth / cwPx));
+        // מימדי קבוצת המטען
+        const rows = Math.ceil(count / perRow);
+        const groupWidth = Math.min(count, perRow) * cwPx;
+        const groupHeight = rows * clPx;
+        // בדיקת שורה חדשה
+        if (xOffset + groupWidth > truckRect.clientWidth) {
+          xOffset = 0;
+          yOffset += maxRowHeight;
+          maxRowHeight = 0;
+        }
+        maxRowHeight = Math.max(maxRowHeight, groupHeight);
+        // ציור פריטים: פריטים גדולים (שטח גבוה) קודם, קטנים מעל
+        const sizes = Array(count).fill().map((_,i) => ({ area: cw*cl }));
+        // פשוט מסדר לפי אחד (אותה מידה) כדי לצייר
         for (let i = 0; i < count; i++) {
-          const row = Math.floor(i / itemsPerRow);
-          const col = i % itemsPerRow;
+          const row = Math.floor(i / perRow);
+          const col = i % perRow;
           const item = document.createElement('div');
           item.className = 'cargo-item';
           item.style.width = cwPx + 'px';
           item.style.height = clPx + 'px';
-          item.style.left = (col * cwPx) + 'px';
-          item.style.top = (row * clPx) + 'px';
+          item.style.left = (xOffset + col*cwPx) + 'px';
+          item.style.top = (yOffset + row*clPx) + 'px';
           item.style.background = colors[ship];
-          item.style.borderColor = colors[ship].replace('0.5', '1');
+          item.style.border = `1px solid ${colors[ship].replace('0.5','1')}`;
           truckRect.appendChild(item);
         }
+        // תווית מקוממת פריקה
         const label = document.createElement('div');
         label.className = 'cargo-count-label';
-        label.textContent = `${ship} (סדר ${priority}): ${count}`;
-        label.style.top = (5 + idx*20) + 'px';
-        label.style.left = '5px';
+        label.textContent = `${ship} (#{data.priority}): ${count}`;
+        label.style.left = xOffset + 'px';
+        label.style.top = yOffset + 'px';
         truckRect.appendChild(label);
+
+        xOffset += groupWidth;
       });
     }
 

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Truck Loading Optimizer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      font-family: sans-serif;
+    }
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 2rem;
+    }
+    #truck-select {
+      display: block;
+      margin: 10px auto;
+      padding: 5px;
+      font-size: 1rem;
+    }
+    #truck-size-container {
+      position: relative;
+      width: 100%;
+      height: 150px;
+      margin-bottom: 20px;
+    }
+    #truck-rect {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 255, 0.3);
+    }
+    #grid {
+      width: 100vw;
+      height: calc(100vh - 300px);
+      background-image:
+        linear-gradient(#ccc 1px, transparent 1px),
+        linear-gradient(90deg, #ccc 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Truck Loading Optimizer</h1>
+  <select id="truck-select">
+    <option value="">בחר משאית לפי לוחית רישוי</option>
+    <option value="ABC-1234">ABC-1234</option>
+    <option value="DEF-5678">DEF-5678</option>
+    <option value="GHI-9012">GHI-9012</option>
+  </select>
+  <div id="truck-size-container">
+    <div id="truck-rect"></div>
+  </div>
+  <div id="grid"></div>
+
+  <script>
+    const truckSelect = document.getElementById('truck-select');
+    const truckRect = document.getElementById('truck-rect');
+    const truckSizes = {
+      'ABC-1234': { width: 200, height: 80 },
+      'DEF-5678': { width: 300, height: 100 },
+      'GHI-9012': { width: 250, height: 90 }
+    };
+    truckSelect.addEventListener('change', () => {
+      const plate = truckSelect.value;
+      const size = truckSizes[plate];
+      if (size) {
+        truckRect.style.width = size.width + 'px';
+        truckRect.style.height = size.height + 'px';
+      } else {
+        truckRect.style.width = '';
+        truckRect.style.height = '';
+      }
+    });
+  </script>
+</body>
+</html>

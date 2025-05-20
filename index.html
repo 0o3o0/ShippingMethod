@@ -22,26 +22,33 @@
       padding: 5px;
       font-size: 1rem;
     }
-    #truck-size-container {
-      position: relative;
-      width: 100%;
-      height: 150px;
-      margin-bottom: 20px;
+    #truck-label {
+      text-align: center;
+      font-size: 1.1rem;
+      margin-bottom: 10px;
     }
-    #truck-rect {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0, 0, 255, 0.3);
+    #grid-container {
+      position: relative;
+      width: 100vw;
+      height: calc(100vh - 140px);
+      margin: 0;
+      padding: 0;
     }
     #grid {
-      width: 100vw;
-      height: calc(100vh - 300px);
+      width: 100%;
+      height: 100%;
       background-image:
         linear-gradient(#ccc 1px, transparent 1px),
         linear-gradient(90deg, #ccc 1px, transparent 1px);
       background-size: 20px 20px;
+    }
+    #truck-rect {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 255, 0.3);
+      pointer-events: none;
     }
   </style>
 </head>
@@ -49,32 +56,42 @@
   <h1>Truck Loading Optimizer</h1>
   <select id="truck-select">
     <option value="">בחר משאית לפי לוחית רישוי</option>
-    <option value="ABC-1234">ABC-1234</option>
-    <option value="DEF-5678">DEF-5678</option>
-    <option value="GHI-9012">GHI-9012</option>
+    <option value="821-69-803">821-69-803</option>
+    <option value="893-15-702">893-15-702</option>
+    <option value="310-85-701">310-85-701</option>
   </select>
-  <div id="truck-size-container">
+  <div id="truck-label"></div>
+  <div id="grid-container">
+    <div id="grid"></div>
     <div id="truck-rect"></div>
   </div>
-  <div id="grid"></div>
 
   <script>
     const truckSelect = document.getElementById('truck-select');
     const truckRect = document.getElementById('truck-rect');
+    const truckLabel = document.getElementById('truck-label');
+    // מידות במטרים
     const truckSizes = {
-      'ABC-1234': { width: 200, height: 80 },
-      'DEF-5678': { width: 300, height: 100 },
-      'GHI-9012': { width: 250, height: 90 }
+      '821-69-803': { width: 8.8, height: 2.2 },
+      '893-15-702': { width: 8.0, height: 2.2 },
+      '310-85-701': { width: 13.0, height: 2.3 }
     };
+    const scale = 50; // פיקסלים למטר
+
     truckSelect.addEventListener('change', () => {
       const plate = truckSelect.value;
       const size = truckSizes[plate];
       if (size) {
-        truckRect.style.width = size.width + 'px';
-        truckRect.style.height = size.height + 'px';
+        // חשב פיקסלים
+        const widthPx = size.width * scale;
+        const heightPx = size.height * scale;
+        truckRect.style.width = widthPx + 'px';
+        truckRect.style.height = heightPx + 'px';
+        truckLabel.textContent = `גודל המשאית: ${size.width} מ׳ x ${size.height} מ׳`;
       } else {
         truckRect.style.width = '';
         truckRect.style.height = '';
+        truckLabel.textContent = '';
       }
     });
   </script>

@@ -36,7 +36,7 @@
       margin: 0 5px;
       padding: 5px;
       font-size: 1rem;
-      width: 120px;
+      width: 100px;
     }
     #grid-container {
       position: relative;
@@ -60,6 +60,22 @@
       transform: translate(-50%, -50%);
       background: rgba(0, 0, 255, 0.3);
       pointer-events: none;
+      overflow: hidden;
+    }
+    .cargo-item {
+      position: absolute;
+      background: rgba(255, 0, 0, 0.5);
+      border: 1px solid rgba(255, 0, 0, 0.8);
+      box-sizing: border-box;
+    }
+    #cargo-count-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 1.5rem;
+      color: #000;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -74,7 +90,9 @@
   <div id="truck-label"></div>
   <div id="cargo-inputs">
     <input type="number" id="cargo-count" min="1" placeholder="מספר הפריטים" />
-    <input type="text" id="cargo-size" placeholder="גודל הפריט (למשל 1x1x1)" />
+    <input type="number" id="cargo-width" step="0.1" min="0" placeholder="רוחב (מ')" />
+    <input type="number" id="cargo-length" step="0.1" min="0" placeholder="אורך (מ')" />
+    <input type="number" id="cargo-height" step="0.1" min="0" placeholder="עובי (מ')" />
   </div>
   <div id="grid-container">
     <div id="grid"></div>
@@ -86,32 +104,72 @@
     const truckRect = document.getElementById('truck-rect');
     const truckLabel = document.getElementById('truck-label');
     const cargoInputs = document.getElementById('cargo-inputs');
-    // מידות במטרים
+    const cargoCountInput = document.getElementById('cargo-count');
+    const cargoWidthInput = document.getElementById('cargo-width');
+    const cargoLengthInput = document.getElementById('cargo-length');
+    // מידות המשאיות במטרים
     const truckSizes = {
       '821-69-803': { width: 8.8, height: 2.2 },
       '893-15-702': { width: 8.0, height: 2.2 },
       '310-85-701': { width: 13.0, height: 2.3 }
     };
-    const scale = 60; // פיקסלים למטר, מוגדל ליעילות
+    const scale = 60; // פיקסלים למטר
+
+    function renderCargo() {
+      const count = parseInt(cargoCountInput.value);
+      const cw = parseFloat(cargoWidthInput.value);
+      const cl = parseFloat(cargoLengthInput.value);
+      if (!truckRect.style.width || !count || !cw || !cl) return;
+      // הסר פריטים קודמים
+      truckRect.querySelectorAll('.cargo-item').forEach(el => el.remove());
+      // עדכן תצוגת מספר פריטים
+      let label = truckRect.querySelector('#cargo-count-label');
+      if (!label) {
+        label = document.createElement('div');
+        label.id = 'cargo-count-label';
+        truckRect.appendChild(label);
+      }
+      label.textContent = count;
+      // חישוב פיקסלים
+      const cwPx = cw * scale;
+      const clPx = cl * scale;
+      const itemsPerRow = Math.max(1, Math.floor(truckRect.clientWidth / cwPx));
+      for (let i = 0; i < count; i++) {
+        const row = Math.floor(i / itemsPerRow);
+        const col = i % itemsPerRow;
+        const item = document.createElement('div');
+        item.className = 'cargo-item';
+        item.style.width = cwPx + 'px';
+        item.style.height = clPx + 'px';
+        item.style.left = (col * cwPx) + 'px';
+        item.style.top = (row * clPx) + 'px';
+        truckRect.appendChild(item);
+      }
+    }
 
     truckSelect.addEventListener('change', () => {
       const plate = truckSelect.value;
       const size = truckSizes[plate];
       if (size) {
-        // חשב פיקסלים
         const widthPx = size.width * scale;
         const heightPx = size.height * scale;
         truckRect.style.width = widthPx + 'px';
         truckRect.style.height = heightPx + 'px';
         truckLabel.textContent = `גודל המשאית: ${size.width} מ׳ x ${size.height} מ׳`;
         cargoInputs.style.display = 'block';
+        renderCargo();
       } else {
         truckRect.style.width = '';
         truckRect.style.height = '';
         truckLabel.textContent = '';
         cargoInputs.style.display = 'none';
+        truckRect.querySelectorAll('.cargo-item, #cargo-count-label').forEach(el => el.remove());
       }
     });
+
+    [cargoCountInput, cargoWidthInput, cargoLengthInput].forEach(el =>
+      el.addEventListener('input', renderCargo)
+    );
   </script>
 </body>
 </html>

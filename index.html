@@ -16,7 +16,7 @@
       margin: 20px 0;
       font-size: 2rem;
     }
-    #truck-select {
+    #truck-select, #shipment-select {
       display: block;
       margin: 10px auto;
       padding: 5px;
@@ -41,7 +41,7 @@
     #grid-container {
       position: relative;
       width: 100vw;
-      height: calc(100vh - 200px);
+      height: calc(100vh - 240px);
       margin: 0;
       padding: 0;
     }
@@ -88,12 +88,22 @@
     <option value="310-85-701">310-85-701</option>
   </select>
   <div id="truck-label"></div>
+
+  <!-- בחירת משלוח -->
+  <select id="shipment-select">
+    <option value="">בחר משלוח</option>
+    <option value="A">משלוח A</option>
+    <option value="B">משלוח B</option>
+    <option value="C">משלוח C</option>
+  </select>
+
   <div id="cargo-inputs">
     <input type="number" id="cargo-count" min="1" placeholder="מספר הפריטים" />
     <input type="number" id="cargo-width" step="0.1" min="0" placeholder="רוחב (מ')" />
     <input type="number" id="cargo-length" step="0.1" min="0" placeholder="אורך (מ')" />
     <input type="number" id="cargo-height" step="0.1" min="0" placeholder="עובי (מ')" />
   </div>
+
   <div id="grid-container">
     <div id="grid"></div>
     <div id="truck-rect"></div>
@@ -101,13 +111,14 @@
 
   <script>
     const truckSelect = document.getElementById('truck-select');
+    const shipmentSelect = document.getElementById('shipment-select');
     const truckRect = document.getElementById('truck-rect');
     const truckLabel = document.getElementById('truck-label');
     const cargoInputs = document.getElementById('cargo-inputs');
     const cargoCountInput = document.getElementById('cargo-count');
     const cargoWidthInput = document.getElementById('cargo-width');
     const cargoLengthInput = document.getElementById('cargo-length');
-    // מידות המשאיות במטרים
+
     const truckSizes = {
       '821-69-803': { width: 8.8, height: 2.2 },
       '893-15-702': { width: 8.0, height: 2.2 },
@@ -119,18 +130,17 @@
       const count = parseInt(cargoCountInput.value);
       const cw = parseFloat(cargoWidthInput.value);
       const cl = parseFloat(cargoLengthInput.value);
-      if (!truckRect.style.width || !count || !cw || !cl) return;
+      if (!truckRect.style.width || !shipmentSelect.value || !count || !cw || !cl) return;
       // הסר פריטים קודמים
       truckRect.querySelectorAll('.cargo-item').forEach(el => el.remove());
-      // עדכן תצוגת מספר פריטים
-      let label = truckRect.querySelector('#cargo-count-label');
-      if (!label) {
-        label = document.createElement('div');
-        label.id = 'cargo-count-label';
-        truckRect.appendChild(label);
-      }
-      label.textContent = count;
-      // חישוב פיקסלים
+      truckRect.querySelectorAll('#cargo-count-label').forEach(el => el.remove());
+
+      // הצגת כמות במרכז
+      const label = document.createElement('div');
+      label.id = 'cargo-count-label';
+      label.textContent = `${shipmentSelect.value}: ${count}`;
+      truckRect.appendChild(label);
+
       const cwPx = cw * scale;
       const clPx = cl * scale;
       const itemsPerRow = Math.max(1, Math.floor(truckRect.clientWidth / cwPx));
@@ -147,26 +157,30 @@
       }
     }
 
-    truckSelect.addEventListener('change', () => {
-      const plate = truckSelect.value;
-      const size = truckSizes[plate];
-      if (size) {
-        const widthPx = size.width * scale;
-        const heightPx = size.height * scale;
-        truckRect.style.width = widthPx + 'px';
-        truckRect.style.height = heightPx + 'px';
-        truckLabel.textContent = `גודל המשאית: ${size.width} מ׳ x ${size.height} מ׳`;
+    function updateVisibility() {
+      if (truckRect.style.width && shipmentSelect.value) {
         cargoInputs.style.display = 'block';
-        renderCargo();
+      } else {
+        cargoInputs.style.display = 'none';
+        truckRect.querySelectorAll('.cargo-item, #cargo-count-label').forEach(el => el.remove());
+      }
+    }
+
+    truckSelect.addEventListener('change', () => {
+      const size = truckSizes[truckSelect.value];
+      if (size) {
+        truckRect.style.width = (size.width * scale) + 'px';
+        truckRect.style.height = (size.height * scale) + 'px';
+        truckLabel.textContent = `גודל המשאית: ${size.width} מ׳ x ${size.height} מ׳`;
       } else {
         truckRect.style.width = '';
         truckRect.style.height = '';
         truckLabel.textContent = '';
-        cargoInputs.style.display = 'none';
-        truckRect.querySelectorAll('.cargo-item, #cargo-count-label').forEach(el => el.remove());
       }
+      updateVisibility();
     });
 
+    shipmentSelect.addEventListener('change', updateVisibility);
     [cargoCountInput, cargoWidthInput, cargoLengthInput].forEach(el =>
       el.addEventListener('input', renderCargo)
     );

@@ -7,14 +7,14 @@
   <style>
     body { margin: 0; padding: 0; background: #fff; font-family: sans-serif; }
     h1 { text-align: center; margin: 20px 0; font-size: 2rem; }
-    select, button { display: block; margin: 10px auto; padding: 5px; font-size: 1rem; }
+    select, button, input { display: block; margin: 10px auto; padding: 5px; font-size: 1rem; }
     #truck-label { text-align: center; font-size: 1.1rem; margin-bottom: 10px; }
     #cargo-inputs { display: none; text-align: center; margin-bottom: 10px; }
-    #cargo-inputs input { margin: 0 5px; padding: 5px; font-size: 1rem; width: 100px; }
-    #grid-container { position: relative; width: 100vw; height: calc(100vh - 260px); margin: 0; padding: 0; }
+    #cargo-inputs input { margin: 0 5px; width: 80px; }
+    #grid-container { position: relative; width: 100vw; height: calc(100vh - 260px); }
     #grid { width: 100%; height: 100%; background-image: linear-gradient(#ccc 1px, transparent 1px), linear-gradient(90deg, #ccc 1px, transparent 1px); background-size: 20px 20px; }
     #truck-rect { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 255, 0.3); pointer-events: none; overflow: hidden; }
-    .cargo-item { position: absolute; border: 1px solid; box-sizing: border-box; }
+    .cargo-item { position: absolute; box-sizing: border-box; }
     .cargo-count-label { position: absolute; font-size: 1.2rem; font-weight: bold; color: #000; pointer-events: none; }
   </style>
 </head>
@@ -40,6 +40,7 @@
     <input type="number" id="cargo-width" step="0.1" min="0" placeholder="רוחב (מ')" />
     <input type="number" id="cargo-length" step="0.1" min="0" placeholder="אורך (מ')" />
     <input type="number" id="cargo-height" step="0.1" min="0" placeholder="עובי (מ')" />
+    <input type="number" id="cargo-priority" min="1" placeholder="סדר פריקה" />
     <button id="add-cargo">הוסף מטען</button>
   </div>
 
@@ -58,6 +59,7 @@
     const cargoWidth = document.getElementById('cargo-width');
     const cargoLength = document.getElementById('cargo-length');
     const cargoHeight = document.getElementById('cargo-height');
+    const cargoPriority = document.getElementById('cargo-priority');
     const addCargoBtn = document.getElementById('add-cargo');
 
     const truckSizes = {
@@ -67,17 +69,19 @@
     };
     const colors = { A: 'rgba(255,0,0,0.5)', B: 'rgba(0,255,0,0.5)', C: 'rgba(0,0,255,0.5)' };
     const scale = 60;
-    const shipmentsData = {};
+    let shipmentsData = {};
 
     function renderAllCargo() {
-      // הסר קודמים
       truckRect.querySelectorAll('.cargo-item, .cargo-count-label').forEach(el => el.remove());
-      Object.entries(shipmentsData).forEach(([ship, data]) => {
-        const { count, cw, cl } = data;
+      // מיין לפי סדר פריקה (עומס): גבוה -> נמוך
+      const sorted = Object.entries(shipmentsData)
+        .sort(([,a], [,b]) => b.priority - a.priority)
+        .sort(([,a], [,b]) => (b.cw*b.cl) - (a.cw*a.cl)); // בין מטענים, גדולים קודם
+      sorted.forEach(([ship, data], idx) => {
+        const { count, cw, cl, priority } = data;
         const cwPx = cw * scale;
         const clPx = cl * scale;
         const itemsPerRow = Math.max(1, Math.floor(truckRect.clientWidth / cwPx));
-        // ציור פריטים
         for (let i = 0; i < count; i++) {
           const row = Math.floor(i / itemsPerRow);
           const col = i % itemsPerRow;
@@ -91,23 +95,17 @@
           item.style.borderColor = colors[ship].replace('0.5', '1');
           truckRect.appendChild(item);
         }
-        // תווית מספר
         const label = document.createElement('div');
         label.className = 'cargo-count-label';
-        label.textContent = `${ship}: ${data.count}`;
-        // הנחית label בפינה עליונה של כל מטען
-        label.style.top = `${Object.keys(shipmentsData).indexOf(ship) * 20 + 5}px`;
+        label.textContent = `${ship} (סדר ${priority}): ${count}`;
+        label.style.top = (5 + idx*20) + 'px';
         label.style.left = '5px';
         truckRect.appendChild(label);
       });
     }
 
     function updateVisibility() {
-      if (truckRect.style.width && shipmentSelect.value) {
-        cargoInputs.style.display = 'block';
-      } else {
-        cargoInputs.style.display = 'none';
-      }
+      cargoInputs.style.display = (truckRect.style.width && shipmentSelect.value) ? 'block' : 'none';
     }
 
     truckSelect.addEventListener('change', () => {
@@ -117,9 +115,7 @@
         truckRect.style.height = (size.height * scale) + 'px';
         truckLabel.textContent = `גודל המשאית: ${size.width} מ׳ x ${size.height} מ׳`;
       } else {
-        truckRect.style.width = '';
-        truckRect.style.height = '';
-        truckLabel.textContent = '';
+        truckRect.style.width = truckLabel.textContent = '';
       }
       shipmentsData = {};
       renderAllCargo();
@@ -131,8 +127,9 @@
       const count = parseInt(cargoCount.value);
       const cw = parseFloat(cargoWidth.value);
       const cl = parseFloat(cargoLength.value);
-      if (!ship || !count || !cw || !cl) return;
-      shipmentsData[ship] = { count, cw, cl };
+      const priority = parseInt(cargoPriority.value);
+      if (!ship || !count || !cw || !cl || !priority) return;
+      shipmentsData[ship] = { count, cw, cl, priority };
       renderAllCargo();
     });
 
